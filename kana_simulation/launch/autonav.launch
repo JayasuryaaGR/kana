@@ -1,0 +1,107 @@
+<launch>
+    <!-- Robot pose -->
+    <arg name="x_robot" default="2"/>
+    <arg name="y_robot" default="-3"/>
+    <arg name="z_robot" default="0"/>
+    <arg name="roll_robot" default="0"/>
+    <arg name="pitch_robot" default="0"/>
+    <arg name="yaw_robot" default="0"/>
+
+    <!-- House pose -->
+    <arg name="x_house" default="0"/>
+    <arg name="y_house" default="0"/>
+    <arg name="z_house" default="0"/>
+    <arg name="roll_house" default="0"/>
+    <arg name="pitch_house" default="0"/>
+    <arg name="yaw_house" default="0"/>
+
+    <!-- Robot Dustbin -->
+    <arg name="x_robot_dustbin" default="0.8"/>
+    <arg name="y_robot_dustbin" default="-1.8"/>
+    <arg name="z_robot_dustbin" default="0.25"/>
+    <arg name="roll_robot_dustbin" default="0"/>
+    <arg name="pitch_robot_dustbin" default="0"/>
+    <arg name="yaw_robot_dustbin" default="0"/>
+
+    <!-- Other Dustbin -->
+    <arg name="x_other_dustbin" default="0.5"/>
+    <arg name="y_other_dustbin" default="0.7"/>
+    <arg name="z_other_dustbin" default="0.125"/>
+    <arg name="roll_other_dustbin" default="0"/>
+    <arg name="pitch_other_dustbin" default="0"/>
+    <arg name="yaw_other_dustbin" default="0"/>
+
+    <arg name="model" default="$(find kana_simulation)/urdf/robot_simulation.urdf.xacro"/>
+    <arg name="rate" default="10" />
+
+    <param name="house" command="$(find xacro)/xacro '$(find kana_simulation)/environment/house.sdf'" />
+    <node name="house_spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-param house -sdf -model Artpark_House
+            -x $(arg x_house) -y $(arg y_house) -z $(arg z_house)
+            -R $(arg roll_house) -P $(arg pitch_house) -Y $(arg yaw_house)" />
+
+    <param name="robot_dustbin" command="$(find xacro)/xacro '$(find kana_simulation)/environment/robot_dustbin.sdf'" />
+    <node name="robot_dustbin_spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-param robot_dustbin -sdf -model Robot_Dustbin
+            -x $(arg x_robot_dustbin) -y $(arg y_robot_dustbin) -z $(arg z_robot_dustbin)
+            -R $(arg roll_robot_dustbin) -P $(arg pitch_robot_dustbin) -Y $(arg yaw_robot_dustbin)" />
+    
+    <param name="other_dustbin" command="$(find xacro)/xacro '$(find kana_simulation)/environment/other_dustbin.sdf'" />
+    <node name="other_dustbin_spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-param other_dustbin -sdf -model Other_Dustbin
+            -x $(arg x_other_dustbin) -y $(arg y_other_dustbin) -z $(arg z_other_dustbin)
+            -R $(arg roll_other_dustbin) -P $(arg pitch_other_dustbin) -Y $(arg yaw_other_dustbin)" />
+
+    <param name="robot_description" command="$(find xacro)/xacro '$(arg model)'" />
+
+    <rosparam file="$(find kana_simulation)/config/robot_control.yaml" command="load"/>
+
+    <include file="$(find kana_simulation)/launch/world.launch" />
+
+    <node name="robot_spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-param robot_description -urdf -model kana
+            -x $(arg x_robot) -y $(arg y_robot) -z $(arg z_robot)
+            -R $(arg roll_robot) -P $(arg pitch_robot) -Y $(arg yaw_robot)" />
+    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find kana_simulation)/include/rviz.rviz" />
+    
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen" >
+        <!-- <remap from="/joint_states" to="/kana/joint_states" />  -->
+    </node>
+
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"
+        args="joint_state_controller
+              front_left_wheel_joint_effort_controller
+              front_right_wheel_joint_effort_controller
+              rear_left_wheel_joint_effort_controller
+              rear_right_wheel_joint_effort_controller" />
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+        <!-- <remap from="/joint_states" to="/kana/joint_states" /> -->
+    </node>
+
+    <!-- <node pkg="gmapping" type="slam_gmapping" name="gmapping">
+        <param name="base_frame" value="base_link" />
+        <param name="odom_frame" value="odom" />
+        <param name="delta" value="0.1" />
+    </node> -->
+
+    <node pkg="move_base" type="move_base" name="move_base" respawn="false" output="screen">
+        <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+        <rosparam file="$(find kana_simulation)/config/costmap_common_params.yaml" command="load" ns="global_costmap"/>
+        <rosparam file="$(find kana_simulation)/config/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+        <rosparam file="$(find kana_simulation)/config/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find kana_simulation)/config/global_costmap_params.yaml" command="load" />
+        <rosparam file="$(find kana_simulation)/config/move_base_params.yaml" command="load" />
+        <rosparam file="$(find kana_simulation)/config/dwa_local_planner.yaml" command="load" />
+    </node>
+
+    <include file="$(find kana_simulation)/launch/amcl.launch">
+        <arg name="initial_pose_x" value="$(arg x_robot)"/>
+        <arg name="initial_pose_y" value="$(arg y_robot)"/>
+    </include>
+
+    <arg name="map_file" default="$(find kana_simulation)/map/sim_map.pgm" />
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find kana_simulation)/map/sim_map.yaml" />
+    
+</launch>

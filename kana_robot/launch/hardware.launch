@@ -1,0 +1,53 @@
+<launch>
+    <!-- Robot pose -->
+    <arg name="x_robot" default="0"/>
+    <arg name="y_robot" default="0"/>
+    <arg name="z_robot" default="0"/>
+    <arg name="roll_robot" default="0"/>
+    <arg name="pitch_robot" default="0"/>
+    <arg name="yaw_robot" default="0"/>
+
+    <arg name="model" default="$(find kana_robot)/urdf/robot_hardware_launch.urdf.xacro"/>
+    <arg name="rate" default="10" />
+
+    <param name="robot_description" command="$(find xacro)/xacro '$(arg model)'" />
+
+    <!-- <rosparam file="$(find kana_robot)/config/robot_control.yaml" command="load"/> -->
+
+    <include file="$(find rplidar_ros)/launch/rplidar.launch" />    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find kana_robot)/include/rviz.rviz" />    
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen" >
+        <!-- <remap from="/joint_states" to="/kana/joint_states" />  -->
+    </node>
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+        <!-- <remap from="/joint_states" to="/kana/joint_states" /> -->
+    </node>
+
+    <!-- <node pkg="gmapping" type="slam_gmapping" name="gmapping">
+        <param name="base_frame" value="base_link" />
+        <param name="odom_frame" value="odom" />
+        <param name="delta" value="0.1" />
+        <param name="maxUrange" value="2.7" />
+        <param name="maxRange" value="3.0" />
+    </node> -->
+
+    <node pkg="move_base" type="move_base" name="move_base" respawn="false" output="screen">
+        <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+        <rosparam file="$(find kana_robot)/config/costmap_common_params.yaml" command="load" ns="global_costmap"/>
+        <rosparam file="$(find kana_robot)/config/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+        <rosparam file="$(find kana_robot)/config/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find kana_robot)/config/global_costmap_params.yaml" command="load" />
+        <rosparam file="$(find kana_robot)/config/move_base_params.yaml" command="load" />
+        <rosparam file="$(find kana_robot)/config/dwa_local_planner.yaml" command="load" />
+    </node>
+
+    <include file="$(find kana_robot)/launch/amcl.launch">
+        <arg name="initial_pose_x" value="$(arg x_robot)"/>
+        <arg name="initial_pose_y" value="$(arg y_robot)"/>
+    </include>
+
+    <arg name="map_file" default="$(find kana_robot)/map/map1.pgm" />
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find kana_robot)/map/map1.yaml" />
+    
+</launch>
