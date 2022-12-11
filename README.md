@@ -1,2 +1,2 @@
-# kana_robot
+# kana
 ROS Modules for Kana Robot
