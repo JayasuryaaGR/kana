@@ -10,31 +10,6 @@ import time
 from geometry_msgs.msg import Twist
 # from sensor_msgs.msg import Image
 
-# def callback(frame):
-#     print("inside callback")
-#     # depth_frame = frame.get_depth_frame()
-#     # color_frame = frame.get_color_frame()
-#     print(dir(frame))
-
-#     # Convert images to numpy arrays
-#     # depth_image = np.asanyarray(depth_frame.get_data())
-#     # color_image = np.asanyarray(color_frame.get_data())
-
-#     point = (200,200)
-#     depth = frame.get_distance(point)
-#     print(depth)
-
-#     display_img = cv2.circle(frame, point, 20, (255,0,0), 2)
-
-#     cv2.imshow("Depth of the Point", display_img)
-#     cv2.waitKey(1)
-    
-# def listener():
-#     rospy.init_node('pointdepth', anonymous=True)
-#     print("Hello")
-#     rospy.Subscriber("/camera/depth/image_rect_raw", Image, callback)
-#     rospy.spin()
-
 def travel(depth):
     global pub_move, move, linvel, camheight, gap
 
